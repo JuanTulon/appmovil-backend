@@ -6,13 +6,10 @@ import ProyectoLimpiFreshRest.LimpiFresh.Modelo.Usuario;
 import ProyectoLimpiFreshRest.LimpiFresh.Repository.ProductoRepository;
 import ProyectoLimpiFreshRest.LimpiFresh.Repository.RolRepository;
 import ProyectoLimpiFreshRest.LimpiFresh.Repository.UsuarioRepository;
-import net.datafaker.Faker;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.stereotype.Component;
 
 import java.util.Arrays;
-import java.util.List;
-import java.util.Locale;
 
 @Component
 public class Dataloader implements CommandLineRunner {
@@ -20,14 +17,11 @@ public class Dataloader implements CommandLineRunner {
     private final RolRepository rolRepository;
     private final UsuarioRepository usuarioRepository;
     private final ProductoRepository productoRepository;
-    private final Faker faker;
 
     public Dataloader(RolRepository rolRepository, UsuarioRepository usuarioRepository, ProductoRepository productoRepository) {
         this.rolRepository = rolRepository;
         this.usuarioRepository = usuarioRepository;
         this.productoRepository = productoRepository;
-        // Configuramos Faker en español para que los datos sean coherentes con tu app
-        this.faker = new Faker(new Locale("es"));
     }
 
     @Override
@@ -35,7 +29,7 @@ public class Dataloader implements CommandLineRunner {
         // Ejecutamos en orden para respetar las relaciones de la BD
         crearRoles();
         crearUsuarios();
-        crearProductos();
+        crearProductosIdenticosApp();
     }
 
     private void crearRoles() {
@@ -84,49 +78,94 @@ public class Dataloader implements CommandLineRunner {
         }
     }
 
-    private void crearProductos() {
+    private void crearProductosIdenticosApp() {
+        // Solo cargamos si la base de datos está vacía
         if (productoRepository.count() == 0) {
-            System.out.println("🔄 Generando catálogo de productos...");
-            
-            // Lista de categorías para rotar
-            List<String> categorias = Arrays.asList("Cocina", "Baño", "Ropa", "Pisos", "Accesorios", "Multiuso");
-            
-            for (int i = 0; i < 20; i++) {
-                Producto p = new Producto();
-                
-                // Generamos datos realistas de limpieza
-                String material = faker.commerce().material();
-                String nombreProducto = "Limpiador " + material + " " + faker.commerce().productName();
-                
-                p.setNombre(nombreProducto);
-                p.setDescripcionCorta(faker.lorem().sentence(5));
-                p.setDescripcionLarga(faker.lorem().paragraph(2));
-                
-                // Precios entre 1000 y 15000
-                int precio = faker.number().numberBetween(1000, 15000);
-                p.setPrecio(precio);
-                
-                // Lógica de ofertas
-                boolean esOferta = i % 3 == 0; // Cada 3 productos, uno es oferta
-                p.setOferta(esOferta);
-                if (esOferta) {
-                    p.setPrecioOferta((int) (precio * 0.8)); // 20% descuento
-                } else {
-                    p.setPrecioOferta(null);
-                }
+            System.out.println("🔄 Sincronizando catálogo con App Móvil...");
 
-                p.setStock(faker.number().numberBetween(0, 100));
-                p.setCategoria(categorias.get(faker.number().numberBetween(0, categorias.size())));
-                
-                // Usamos una imagen genérica o nombre de archivo simulado
-                // Si usas la estrategia de "nombre de archivo", esto simula lo que guardarías
-                p.setImg("producto_" + (i + 1) + ".jpg"); 
-                
-                p.setIva(19);
+            // 1. Quix (Cat 1: Cocina)
+            guardar("Lavaloza Quix 1L", "Desengrasante con aroma a limón", 
+                    "Poder desengrasante superior que rinde más.", 
+                    2990, 50, "Cocina", "quix", "Quix", "Botella 1L", null);
 
-                productoRepository.save(p);
-            }
-            System.out.println("20 Productos generados exitosamente.");
+            // 2. Cif (Cat 1: Cocina) - TIENE PRECIO ANTERIOR (OFERTA)
+            // Lógica: Precio Base 2790, Oferta 2490
+            guardar("Cif Crema Limpiador", "Limpiador cremoso multiuso", 
+                    "Micropartículas que remueven la suciedad más difícil.", 
+                    2790, 40, "Cocina", "cif", "Cif", "Botella 750g", 2490);
+
+            // 3. Clorox (Cat 2: Baño)
+            guardar("Clorox Cloro Gel 900ml", "Desinfecta, limpia y blanquea", 
+                    "Máxima precisión sin salpicaduras.", 
+                    3190, 35, "Baño", "clorox", "Clorox", "Botella 900ml", null);
+
+            // 4. Pato (Cat 2: Baño)
+            guardar("Pato Discos Activos", "Gel limpiador adhesivo para inodoro", 
+                    "Mantiene el inodoro fresco y limpio en cada descarga.", 
+                    4990, 30, "Baño", "pato", "Pato", "Pack 6 discos", null);
+
+            // 5. Ariel (Cat 3: Ropa) - TIENE PRECIO ANTERIOR (OFERTA)
+            // Lógica: Precio Base 14990, Oferta 12990
+            guardar("Detergente Ariel 3L", "Concentrado para ropa blanca y de color", 
+                    "Remueve manchas difíciles a la primera lavada.", 
+                    14990, 20, "Ropa", "ariel", "Ariel", "Botella 3L", 12990);
+
+            // 6. Downy (Cat 3: Ropa)
+            guardar("Suavizante Downy 1.5L", "Aroma fresco y duradero", 
+                    "Protege las fibras y deja un aroma increíble.", 
+                    6990, 25, "Ropa", "downy", "Downy", "Botella 1.5L", null);
+
+            // 7. Poett (Cat 4: Pisos)
+            guardar("Poett Limpiador Lavanda", "Aromatizante para pisos 1.8L", 
+                    "Fragancia de larga duración para todo tu hogar.", 
+                    3590, 40, "Pisos", "poett", "Poett", "Botella 1.8L", null);
+
+            // 8. Esponja (Cat 5: Accesorios)
+            guardar("Esponja Virutex (Pack 3)", "Esponja multiuso", 
+                    "Fibra abrasiva y espuma de alta duración.", 
+                    1990, 100, "Accesorios", "esponja", "Virutex", "Pack 3 unidades", null);
+
+            // 9. Paños (Cat 5: Accesorios)
+            guardar("Paños de Microfibra", "Paños reutilizables (Pack 5)", 
+                    "No dejan pelusas, ideales para vidrios y muebles.", 
+                    4990, 60, "Accesorios", "panos", "Genérica", "Pack 5 unidades", null);
+
+            // 10. Lysol (Cat 6: Multiuso/Desinfección)
+            guardar("Lysol Spray Desinfectante", "Elimina el 99.9% de gérmenes", 
+                    "Desinfección efectiva en superficies duras y blandas.", 
+                    5990, 30, "Multiuso", "lysol", "Lysol", "Aerosol 340g", null);
+
+            System.out.println(" 10 Productos idénticos a la App cargados.");
         }
+    }
+
+    private void guardar(String nombre, String corta, String larga, int precioBase, int stock, 
+                         String categoria, String img, String marca, String formato, Integer precioOferta) {
+        
+        Producto p = new Producto();
+        p.setNombre(nombre);
+        p.setDescripcionCorta(corta);
+        p.setDescripcionLarga(larga); // Usamos una descripción un poco más larga generada
+        p.setPrecio(precioBase);
+        p.setStock(stock);
+        p.setCategoria(categoria);
+        
+        // Aquí guardamos la clave ("cif", "quix") para que Android use el recurso local
+        p.setImg(img); 
+        
+        p.setIva(19);
+        p.setMarca(marca);   // Asumiendo que agregaste este campo a tu modelo backend
+        p.setFormato(formato); // Asumiendo que agregaste este campo
+
+        // Lógica de Ofertas
+        if (precioOferta != null) {
+            p.setOferta(true);
+            p.setPrecioOferta(precioOferta);
+        } else {
+            p.setOferta(false);
+            p.setPrecioOferta(null);
+        }
+
+        productoRepository.save(p);
     }
 }

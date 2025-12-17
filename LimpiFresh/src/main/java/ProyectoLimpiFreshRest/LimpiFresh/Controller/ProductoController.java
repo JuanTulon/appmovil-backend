@@ -13,8 +13,10 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import org.springframework.http.MediaType;
+import java.io.File;
+
 import java.nio.file.*;
-import java.io.IOException;
 import java.util.List;
 import java.util.UUID;
 
@@ -28,28 +30,32 @@ public class ProductoController {
         this.productoService = service;
     }
 
-    @PostMapping("/upload")
+    @PostMapping(value = "/upload", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
     public ResponseEntity<String> uploadImage(@RequestParam("file") MultipartFile file) {
         try {
-            // 1. Definir dónde guardar (debe coincidir con WebConfig)
-            String uploadDir = "/home/ubuntu/uploads/"; 
+            // Ruta relativa a donde se ejecuta el jar/proyecto
+            String uploadDir = "uploads/"; 
             
-            // 2. Generar nombre único para evitar colisiones
+            // Crear directorio si no existe
+            File directory = new File(uploadDir);
+            if (!directory.exists()) {
+                directory.mkdirs();
+            }
+
+            // Generar nombre único para evitar colisiones
             String fileName = UUID.randomUUID().toString() + "_" + file.getOriginalFilename();
             
-            // 3. Guardar el archivo físico
-            Path path = Paths.get(uploadDir + fileName);
-            Files.createDirectories(path.getParent()); // Crea la carpeta si no existe
-            Files.write(path, file.getBytes());
+            // Guardar el archivo
+            Path filePath = Paths.get(uploadDir + fileName);
+            Files.write(filePath, file.getBytes());
             
-            // 4. Devolver la URL relativa que Android guardará en la BD
-            // Ojo: Solo devolvemos la parte final de la URL
-            String urlParaBD = "images/" + fileName; 
+            // Devolver la RUTA RELATIVA para que Android la guarde en la BD
+            // Ej: "uploads/mi_foto.jpg"
+            return ResponseEntity.ok("uploads/" + fileName);
             
-            return ResponseEntity.ok(urlParaBD);
-            
-        } catch (IOException e) {
-            return ResponseEntity.internalServerError().body("Error al subir imagen: " + e.getMessage());
+        } catch (Exception e) {
+            e.printStackTrace();
+            return ResponseEntity.internalServerError().body("Error: " + e.getMessage());
         }
     }
 

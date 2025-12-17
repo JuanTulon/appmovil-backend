@@ -24,6 +24,8 @@ public class Producto {
     private String img;
     private Integer stock;
     private Integer iva;
+    private String marca;
+    private String formato;
 
     // Setter explícito para evitar problemas con Lombok al compilar
     public void setId(Integer id) {
